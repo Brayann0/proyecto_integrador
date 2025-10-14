@@ -1,0 +1,9 @@
+
+<a href="{% url 'registros:detalle_registro' registro.id %}">Ver detalle</a>
+
+<h2>Detalle del registro</h2>
+<p><strong>Usuario:</strong> {{ registro.usuario }}</p>
+<p><strong>Nombre:</strong> {{ registro.nombre }}</p>
+<p><strong>Identificación:</strong> {{ registro.identificacion }}</p>
+<p><strong>Salario:</strong> {{ registro.salario }}</p>
+<p><strong>Fecha de pago:</strong> {{ registro.fecha_pago }}</p>

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dashboard Usuario{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Bienvenido, {{ request.user.nombre }}</h2>
+
+    <div class="row justify-content-center">
+        <!-- Ver registros del usuario -->
+        <div class="col-md-5">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <i class="fas fa-list-alt fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">Mis Registros</h5>
+                    {% if tiene_registros %}
+                        <p class="card-text">Consulta tus registros contables.</p>
+                        <a href="{% url 'registros:ver_registros' %}" class="btn btn-info">Ver</a>
+                    {% else %}
+                        <p class="card-text text-muted">Aún no tienes registros disponibles.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Editar perfil -->
+        <div class="col-md-5">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <i class="fas fa-user fa-3x text-secondary mb-3"></i>
+                    <h5 class="card-title">Mi Perfil</h5>
+                    <p class="card-text">Consulta y actualiza tu información personal.</p>
+                    <a href="#" class="btn btn-secondary">Editar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

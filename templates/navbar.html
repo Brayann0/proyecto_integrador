@@ -1,0 +1,16 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="#">LOGO</a>
+
+        <div class="d-flex">
+            {% if user.is_authenticated %}
+                <span class="navbar-text me-3">
+                    👤 {{ user.username }}
+                </span>
+                <a href="{% url 'usuarios:logout' %}" class="btn btn-outline-light btn-sm">Cerrar sesión</a>
+            {% else %}
+                <a href="{% url 'usuarios:login' %}" class="btn btn-light btn-sm">Iniciar sesión</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>

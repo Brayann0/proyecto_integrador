@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <h2 class="mb-4 text-center">📑 Registros Contables</h2>
+
+    <!-- FILTRO POR FECHAS -->
+    <form method="get" class="row g-3 justify-content-center mb-4">
+        <div class="col-auto">
+            <label for="fecha_inicio" class="col-form-label">Desde:</label>
+        </div>
+        <div class="col-auto">
+            <input type="date" id="fecha_inicio" name="fecha_inicio" class="form-control"
+                   value="{{ request.GET.fecha_inicio }}">
+        </div>
+        <div class="col-auto">
+            <label for="fecha_fin" class="col-form-label">Hasta:</label>
+        </div>
+        <div class="col-auto">
+            <input type="date" id="fecha_fin" name="fecha_fin" class="form-control"
+                   value="{{ request.GET.fecha_fin }}">
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+            <a href="{% url 'registros:ver_registros' %}" class="btn btn-outline-secondary">Limpiar</a>
+        </div>
+    </form>
+
+    {% if formset %}
+    <!-- Formulario editable -->
+    <form method="post">
+        {% csrf_token %}
+        {{ formset.management_form }}
+
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Identificación</th>
+                    <th>Salario</th>
+                    <th>Fecha de pago</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for form in formset %}
+                <tr>
+                    <td>{{ form.nombre }}</td>
+                    <td>{{ form.identificacion }}</td>
+                    <td>{{ form.salario }}</td>
+                    <td>{{ form.fecha_pago }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="d-flex justify-content-between mt-3">
+            <a href="{% url 'registros:lista_archivo' %}" class="btn btn-secondary">
+                ⬅ Volver a archivos
+            </a>
+            <button type="submit" class="btn btn-success">
+                💾 Guardar cambios
+            </button>
+        </div>
+    </form>
+
+    {% elif registros %}
+    <!-- Versión solo lectura -->
+    <table class="table table-bordered table-striped mt-3">
+        <thead class="table-dark text-center">
+            <tr>
+                <th>Fecha</th>
+                <th>Nombre</th>
+                <th>Identificación</th>
+                <th>Valor</th>
+                <th>Descripción</th>
+                <th>Usuario</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in registros %}
+            <tr>
+                <td>{{ r.fecha|date:"d/m/Y" }}</td>
+                <td>{{ r.nombre }}</td>
+                <td>{{ r.identificacion }}</td>
+                <td>{{ r.valor }}</td>
+                <td>{{ r.descripcion }}</td>
+                <td>
+                    {% if r.usuario %}
+                        {{ r.usuario.username }}
+                    {% elif r.persona_no_registrada %}
+                        {{ r.persona_no_registrada.nombre }}
+                    {% else %}
+                        ---
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{% url 'registros:lista_archivos' %}" class="btn btn-secondary mt-3">
+        ⬅ Volver a archivos
+    </a>
+
+    {% else %}
+    <!-- Sin registros -->
+    <div class="alert alert-warning mt-3 text-center">
+        No hay registros todavía.
+    </div>
+    <a href="{% url 'registros:lista_archivos' %}" class="btn btn-secondary mt-3">
+        ⬅ Volver a archivos
+    </a>
+
+    {% endif %}
+
+</div>
+{% endblock %}

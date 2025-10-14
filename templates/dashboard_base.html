@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex">
+    <!-- Sidebar -->
+    <aside class="bg-light border-end p-3" style="width: 250px; height: 100vh;">
+        <ul class="nav flex-column">
+            <li class="nav-item mb-2">
+                <a class="nav-link active" href="{% url 'admin_dashboard' %}">🏠 Inicio</a>
+            </li>
+            <li class="nav-item mb-2">
+                <a class="nav-link" href="{% url 'lista_usuarios' %}">👥 Usuarios</a>
+            </li>
+            <li class="nav-item mb-2">
+                <a class="nav-link" href="{% url 'subir_archivo' %}">⬆️ Subir Archivos</a>
+            </li>
+            <li class="nav-item mb-2">
+                <a class="nav-link" href="{% url 'ver_registros' %}">📑 Ver Registros</a>
+            </li>
+            <li class="nav-item mb-2">
+                <a class="nav-link" href="#">📊 Reportes</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">⚙️ Configuración</a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Contenido principal -->
+    <section class="flex-grow-1 p-4">
+        {% block dashboard_content %}
+        
+        {% endblock %}
+    </section>
+</div>
+{% endblock %}

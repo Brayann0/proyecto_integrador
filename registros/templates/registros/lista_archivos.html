@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>📂 Archivos Subidos</h2>
+
+    <!-- 🔍 Formulario de filtro por fecha -->
+    <form method="get" class="row g-3 mt-3 mb-4">
+        <div class="col-md-4">
+            <label for="fecha_inicio" class="form-label">Desde:</label>
+            <input type="date" id="fecha_inicio" name="fecha_inicio" 
+                    value="{{ request.GET.fecha_inicio }}" 
+                    class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label for="fecha_fin" class="form-label">Hasta:</label>
+            <input type="date" id="fecha_fin" name="fecha_fin" 
+                    value="{{ request.GET.fecha_fin }}" 
+                    class="form-control">
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary me-2">🔎 Filtrar</button>
+            <a href="{% url 'registros:lista_archivos' %}" class="btn btn-secondary">♻ Limpiar</a>
+        </div>
+    </form>
+
+    {% if archivos %}
+        <table class="table table-bordered table-striped mt-3 shadow-sm">
+            <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Tamaño (KB)</th>
+                    <th>Fecha de subida</th>
+                    <th>Usuario</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for archivo in archivos %}
+                <tr>
+                    <td>{{ archivo.nombre_original }}</td>
+                    <td>{{ archivo.tamano_kb }}</td>
+                    <td>{{ archivo.fecha_subida|date:"d/m/Y H:i" }}</td>
+                    <td>{{ archivo.subido_por.username }}</td>
+                    <td>{{ a.num_registros }}</td>
+
+                    <td>
+                        <!-- Botón para descargar -->
+                        {% if archivo.datos %}
+                        <a href="{% url 'registros:descargar_archivo' archivo.id %}" class="btn btn-sm btn-success">
+                            ⬇ Descargar
+                        </a>
+                    {% else %}
+                        <button class="btn btn-sm btn-secondary" disabled>Sin datos</button>
+                    {% endif %}
+
+
+                        <!-- Botón para ver registros -->
+                        <a href="{% url 'registros:ver_registros_por_archivo' archivo.id %}" 
+                            class="btn btn-sm btn-info">
+                            👁 Ver registros
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-warning mt-3">
+            ⚠ No hay archivos subidos en el rango de fechas seleccionado.
+        </div>
+    {% endif %}
+
+    <!-- Botón para subir nuevo archivo -->
+    <a href="{% url 'registros:subir_archivo' %}" class="btn btn-primary mt-3">
+        ➕ Subir nuevo archivo
+    </a>
+</div>
+{% endblock %}

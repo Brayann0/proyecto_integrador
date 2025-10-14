@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dashboard Administrador{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+            <div class="sidebar-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">
+                            <i class="fas fa-home"></i> Inicio
+                        </a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-users"></i> Usuarios</a></li>
+                    <li class="nav-item"><a href="{% url 'registros:subir_archivo' %}" class="btn btn-success">Subir</a></li>
+                    <li class="nav-item"><a href="{% url 'registros:ver_registros' %}" class="btn btn-primary">ver Registros</a></li>
+                    <li class="nav-item"><a href="{% url 'registros:lista_archivos' %}" class="btn btn-primary">ver archivos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-chart-line"></i> Reportes</a></li>
+                    <li class="nav-item"><a href="{% url 'admin:index' %}" class="btn btn-warning">Ajustes</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Contenido -->
+        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+            <h2 class="mt-4">Panel de Administración</h2>
+
+            <!-- Métricas -->
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="card text-center shadow-sm">
+                        <div class="card-body">
+                            <h5>Total de usuarios</h5>
+                            <h2>{{ total_usuarios }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center shadow-sm">
+                        <div class="card-body">
+                            <h5>Total de archivos</h5>
+                            <h2>{{ total_archivos }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center shadow-sm">
+                        <div class="card-body">
+                            <h5>Total de registros</h5>
+                            <h2>{{ total_registros }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráficas -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card shadow-sm">    
+                        <div class="card-body">
+                            <h5>Archivos subidos por mes</h5>
+                            <div id="archivosMesChart"></div>
+                        </div>j
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5>Usuarios activos vs inactivos</h5>
+                            <div id="usuariosChart"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top usuarios -->
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5>Top 5 usuarios por valor</h5>
+                            <div id="valoresChart"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Últimos archivos -->
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5>Últimos archivos subidos</h5>
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Fecha</th>
+                                        <th>Subido por</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for archivo in ultimos_archivos %}
+                                    <tr>
+                                        <td>{{ archivo.nombre_original }}</td>
+                                        <td>{{ archivo.fecha_subida|date:"d-M-Y" }}</td>
+                                        <td>{{ archivo.subido_por }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr><td colspan="3">No hay archivos recientes.</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Plotly -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+    // ===== Archivos por mes =====
+    const archivosMes = JSON.parse('{{ archivos_por_mes|safe|escapejs }}');
+    Plotly.newPlot('archivosMesChart', [{
+        x: archivosMes.map(x => "Mes " + x.mes),
+        y: archivosMes.map(x => x.total),
+        type: 'bar',
+        marker: { color: 'rgba(54, 162, 235, 0.7)' }
+    }], {
+        title: 'Archivos subidos por mes',
+        xaxis: { title: 'Mes' },
+        yaxis: { title: 'Total de archivos' }
+    });
+
+    // ===== Usuarios activos vs inactivos =====
+    const usuariosEstado = JSON.parse('{{ usuarios_estado|safe|escapejs }}');
+    Plotly.newPlot('usuariosChart', [{
+        values: usuariosEstado.map(x => x.total),
+        labels: usuariosEstado.map(x => x.is_active ? 'Activos' : 'Inactivos'),
+        type: 'pie',
+        marker: { colors: ['#4CAF50', '#F44336'] }
+    }], {
+        title: 'Usuarios activos vs inactivos'
+    });
+
+    // ===== Top 5 usuarios por valor =====
+    const valoresUsuario = JSON.parse('{{ valores_por_usuario|safe|escapejs }}');
+    Plotly.newPlot('valoresChart', [{
+        x: valoresUsuario.map(x => x.usuario__username || "Sin usuario"),
+        y: valoresUsuario.map(x => x.total),
+        type: 'bar',
+        marker: { color: 'rgba(255, 159, 64, 0.7)' }
+    }], {
+        title: 'Top 5 usuarios por valor',
+        xaxis: { title: 'Usuario' },
+        yaxis: { title: 'Valor total' }
+    });
+</script>
+{% endblock %}
