@@ -2,31 +2,49 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 from .models import Usuario
 from registros.models import RegistroContable
+import os
 
 
-# Formulario de login
+# ===========================================
+# FORMULARIO DE LOGIN
+# ===========================================
 class LoginForm(AuthenticationForm):
-    username = forms.CharField(label='Correo electrónico o usuario')
-    password = forms.CharField(label='Contraseña', widget=forms.PasswordInput)
+    username = forms.EmailField(
+        label='Correo electrónico',
+        widget=forms.EmailInput(attrs={'autofocus': True})
+    )
+    password = forms.CharField(
+        label='Contraseña',
+        widget=forms.PasswordInput
+    )
 
 
-# Formulario de registro de usuarios
+# ===========================================
+# FORMULARIO DE REGISTRO DE USUARIOS
+# ===========================================
 class UserRegistrationForm(forms.ModelForm):
     password = forms.CharField(
-        label='Contraseña', 
+        label='Contraseña',
         widget=forms.PasswordInput,
         help_text="Debe tener al menos 6 caracteres."
     )
     password2 = forms.CharField(
-        label='Repetir Contraseña', 
-        widget=forms.PasswordInput
+        label='Confirmar Contraseña',
+        widget=forms.PasswordInput,
+        help_text="Repite la contraseña para verificarla."
+    )
+    admin_key = forms.CharField(
+        label='Clave de administrador (opcional)',
+        required=False,
+        widget=forms.PasswordInput,
+        help_text="Déjalo vacío si quieres ser usuario normal."
     )
 
     class Meta:
         model = Usuario
         fields = ['username', 'nombre', 'apellido', 'email', 'identificacion']
 
-    # Validación de email
+    # --- Validar correo ---
     def clean_email(self):
         email = self.cleaned_data.get("email")
         if not email or "@" not in email:
@@ -35,21 +53,32 @@ class UserRegistrationForm(forms.ModelForm):
             raise forms.ValidationError("Este correo ya está en uso.")
         return email
 
-    # Validación de contraseñas
-    def clean_password2(self):
-        cd = self.cleaned_data
-        if cd.get('password') != cd.get('password2'):
-            raise forms.ValidationError('Las contraseñas no coinciden')
-        return cd['password2']
+    # --- Validar contraseñas ---
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get('password')
+        password2 = cleaned_data.get('password2')
 
-    # Guardado del usuario
+        if password and len(password) < 6:
+            self.add_error('password', "La contraseña debe tener al menos 6 caracteres.")
+        if password and password2 and password != password2:
+            self.add_error('password2', "Las contraseñas no coinciden.")
+        return cleaned_data
+
+    # --- Guardar usuario ---
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.set_password(self.cleaned_data['password'])  # Encriptar contraseña
+        raw_password = self.cleaned_data.get('password')  # 🔑 Guarda la contraseña antes de sobrescribir
+        user.set_password(raw_password)  # 🔒 Encripta correctamente la contraseña
+
+        # --- Asignar rol según clave de administrador ---
+        CLAVE_ADMIN = os.getenv("ADMIN_KEY", "ADMINSUPER2025")
+        user.is_staff = (self.cleaned_data.get("admin_key") == CLAVE_ADMIN)
+
         if commit:
             user.save()
 
-            # Vincular registros contables existentes por identificación
+            # Vincular registros contables previos con la misma identificación
             RegistroContable.objects.filter(
                 identificacion=user.identificacion,
                 usuario__isnull=True

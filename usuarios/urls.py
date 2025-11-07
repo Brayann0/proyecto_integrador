@@ -7,7 +7,8 @@ app_name = "usuarios"
 urlpatterns = [
     path("login/", views.CustomLoginView.as_view(template_name="registration/login.html"), name="login"),
     path("logout/", LogoutView.as_view(next_page="usuarios:login"), name="logout"),
-    path("register/", views.registr, name="register"),
+    path("register/", views.register, name="register"),
+
 
     # Redirección automática (admin o usuario normal)
     path("dashboard/", views.redireccion_dashboard, name="dashboard"),

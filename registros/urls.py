@@ -17,7 +17,8 @@ urlpatterns = [
 
     # Ver registros de un archivo en particular (nombre que usa la plantilla)
     path('ver/<int:archivo_id>/', views.ver_registros, name='ver_registros_por_archivo'),
-
+    
+    path('ver/<int:archivo_id>/', views.ver_registros, name='ver_registros'), 
 
 
     # Detalle de un registro específico

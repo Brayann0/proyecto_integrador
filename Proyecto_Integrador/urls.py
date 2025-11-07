@@ -25,5 +25,7 @@ urlpatterns = [
     path('registros/', include(('registros.urls', 'registros'), namespace='registros')),  # ✅ Correcta
     path('Api/', include('Api.urls')),            
     path('', lambda request: redirect('usuarios:login')),
+    path('backups/', include('backups.urls')),
+
 ]
 

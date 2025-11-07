@@ -15,17 +15,38 @@
                             <i class="fas fa-home"></i> Inicio
                         </a>
                     </li>
-                    <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-users"></i> Usuarios</a></li>
-                    <li class="nav-item"><a href="{% url 'registros:subir_archivo' %}" class="btn btn-success">Subir</a></li>
-                    <li class="nav-item"><a href="{% url 'registros:ver_registros' %}" class="btn btn-primary">ver Registros</a></li>
-                    <li class="nav-item"><a href="{% url 'registros:lista_archivos' %}" class="btn btn-primary">ver archivos</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-chart-line"></i> Reportes</a></li>
-                    <li class="nav-item"><a href="{% url 'admin:index' %}" class="btn btn-warning">Ajustes</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="fas fa-users"></i> Usuarios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'registros:subir_archivo' %}" class="btn btn-success">Subir</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'registros:ver_registros' %}" class="btn btn-primary">Ver Registros</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'registros:lista_archivos' %}" class="btn btn-primary">Ver Archivos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="fas fa-chart-line"></i> Reportes</a>
+                    </li>
+
+                    <!-- SOLO SUPERUSUARIO -->
+                    {% if user.is_superuser %}
+                        <li class="nav-item">
+                            <a href="{% url 'admin:index' %}" class="btn btn-warning">Ajustes</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'backups:lista_backups' %}" class="btn btn-outline-info mt-2">
+                                💾 Copias de seguridad
+                            </a>
+                        </li>
+                    {% endif %}
                 </ul>
             </div>
         </nav>
 
-        <!-- Contenido -->
+        <!-- Contenido principal -->
         <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
             <h2 class="mt-4">Panel de Administración</h2>
 
@@ -64,7 +85,7 @@
                         <div class="card-body">
                             <h5>Archivos subidos por mes</h5>
                             <div id="archivosMesChart"></div>
-                        </div>j
+                        </div>
                     </div>
                 </div>
                 <div class="col-md-6">

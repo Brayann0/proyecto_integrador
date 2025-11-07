@@ -50,7 +50,10 @@ def procesar_archivos(archivo_obj):
         identificacion = str(row.get("identificacion")).strip() if row.get("identificacion") else None
         nombre = row.get("nombre", "")
 
+        # Buscar usuario registrado
         usuario = Usuario.objects.filter(identificacion=identificacion).first() if identificacion else None
+
+        # Si no hay usuario, crear o usar PersonaNoRegistrada
         persona = None
         if not usuario and identificacion:
             persona, _ = PersonaNoRegistrada.objects.get_or_create(
@@ -58,10 +61,11 @@ def procesar_archivos(archivo_obj):
                 defaults={"nombre": nombre or "Desconocido"}
             )
 
+        # Crear registro contable
         RegistroContable.objects.create(
             archivo=archivo_obj,
             usuario=usuario,
-            persona_no_registrada=persona,
+            persona_no_registrada=persona,  # asegúrate de que el campo en el modelo se llame así
             identificacion=identificacion,
             nombre=nombre,
             valor=row.get("valor", 0),
@@ -71,10 +75,13 @@ def procesar_archivos(archivo_obj):
             fecha_pago=row.get("fecha_pago") if "fecha_pago" in df.columns else None,
             email=row.get("email") if "email" in df.columns else None,
         )
+
         registros_creados += 1
 
+    # Marcar archivo como procesado
     archivo_obj.procesado = True
     archivo_obj.registros_creados = registros_creados
     archivo_obj.save()
 
     return registros_creados
+

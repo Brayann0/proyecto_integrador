@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import pymysql
+import sys
 import os
 
 
@@ -34,6 +35,8 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 
+BACKUP_DIR = os.path.join(BASE_DIR, 'backups', 'archivos')
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -50,6 +53,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'Api',
     'axes',
+    'backups',
 ]
 
 AUTH_USER_MODEL = 'usuarios.Usuario'
@@ -65,11 +69,11 @@ MIDDLEWARE = [
     'axes.middleware.AxesMiddleware',  
 ]
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
     'axes.backends.AxesStandaloneBackend',
-
-
+    'django.contrib.auth.backends.ModelBackend',
 ]
+
+
 AXES_FAILURE_LIMIT = 5       # 5 intentos
 AXES_COOLOFF_TIME = 2 
 
@@ -154,3 +158,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+LOGIN_URL = "usuarios:login"
+LOGIN_REDIRECT_URL = "usuarios:dashboard"
+LOGOUT_REDIRECT_URL = "usuarios:login"
+
+
+if 'test' in sys.argv:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:',
+    }

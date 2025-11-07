@@ -5,6 +5,7 @@ from django.conf import settings
 class ArchivoCargado(models.Model):
     nombre_original = models.CharField(max_length=255)
     archivo = models.FileField(upload_to='archivos/')
+    datos = models.BinaryField(null=True, blank=True) 
     tamano = models.PositiveIntegerField()
     tipo_mime = models.CharField(max_length=100, blank=True, null=True)
     fecha_subida = models.DateTimeField(auto_now_add=True)
@@ -41,7 +42,7 @@ class RegistroContable(models.Model):
         blank=True
     )
 
-    PersonaNoRegistrada= models.ForeignKey(
+    persona_no_registrada= models.ForeignKey(
         'usuarios.PersonaNoRegistrada',
         on_delete=models.SET_NULL,
         null=True,

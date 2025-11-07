@@ -28,7 +28,7 @@
     </form>
 
     {% if formset %}
-    <!-- Formulario editable -->
+    <!-- FORMSET EDITABLE -->
     <form method="post">
         {% csrf_token %}
         {{ formset.management_form }}
@@ -55,7 +55,7 @@
         </table>
 
         <div class="d-flex justify-content-between mt-3">
-            <a href="{% url 'registros:lista_archivo' %}" class="btn btn-secondary">
+            <a href="{% url 'registros:lista_archivos' %}" class="btn btn-secondary">
                 ⬅ Volver a archivos
             </a>
             <button type="submit" class="btn btn-success">
@@ -65,54 +65,89 @@
     </form>
 
     {% elif registros %}
-    <!-- Versión solo lectura -->
-    <table class="table table-bordered table-striped mt-3">
-        <thead class="table-dark text-center">
+    <h4 class="text-center mb-3">📋 Registros del archivo {{ archivo.nombre_original }}</h4>
+
+    <table id="tablaRegistros" class="table table-bordered table-striped mt-3 text-center">
+        <thead class="table-dark">
             <tr>
+                <th>ID</th>
                 <th>Fecha</th>
                 <th>Nombre</th>
                 <th>Identificación</th>
                 <th>Valor</th>
                 <th>Descripción</th>
-                <th>Usuario</th>
             </tr>
         </thead>
         <tbody>
             {% for r in registros %}
-            <tr>
-                <td>{{ r.fecha|date:"d/m/Y" }}</td>
-                <td>{{ r.nombre }}</td>
-                <td>{{ r.identificacion }}</td>
-                <td>{{ r.valor }}</td>
-                <td>{{ r.descripcion }}</td>
-                <td>
-                    {% if r.usuario %}
-                        {{ r.usuario.username }}
-                    {% elif r.persona_no_registrada %}
-                        {{ r.persona_no_registrada.nombre }}
-                    {% else %}
-                        ---
-                    {% endif %}
-                </td>
+            <tr data-id="{{ r.id }}">
+                <td>{{ r.id }}</td>
+                {% if archivo %}
+                    <td contenteditable="true">{{ r.fecha|date:"Y-m-d" }}</td>
+                    <td contenteditable="true">{{ r.nombre }}</td>
+                    <td contenteditable="true">{{ r.identificacion }}</td>
+                    <td contenteditable="true">{{ r.valor }}</td>
+                    <td contenteditable="true">{{ r.descripcion }}</td>
+                {% else %}
+                    <td>{{ r.fecha|date:"Y-m-d" }}</td>
+                    <td>{{ r.nombre }}</td>
+                    <td>{{ r.identificacion }}</td>
+                    <td>{{ r.valor }}</td>
+                    <td>{{ r.descripcion }}</td>
+                {% endif %}
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <a href="{% url 'registros:lista_archivos' %}" class="btn btn-secondary mt-3">
-        ⬅ Volver a archivos
-    </a>
+    <div class="d-flex justify-content-between mt-3">
+        <a href="{% url 'registros:lista_archivos' %}" class="btn btn-secondary">⬅ Volver</a>
 
-    {% else %}
-    <!-- Sin registros -->
-    <div class="alert alert-warning mt-3 text-center">
-        No hay registros todavía.
+        {% if archivo %}
+            <button id="guardarCambios" class="btn btn-success">💾 Guardar cambios</button>
+        {% else %}
+            <div class="alert alert-info mb-0">
+                🔒 Modo solo lectura: no se pueden editar registros.
+            </div>
+        {% endif %}
     </div>
-    <a href="{% url 'registros:lista_archivos' %}" class="btn btn-secondary mt-3">
-        ⬅ Volver a archivos
-    </a>
 
+    {% if archivo %}
+    <script>
+    document.getElementById("guardarCambios").addEventListener("click", () => {
+        const filas = document.querySelectorAll("#tablaRegistros tbody tr");
+        const registros = [];
+
+        filas.forEach(fila => {
+            const celdas = fila.querySelectorAll("td");
+            registros.push({
+                id: fila.dataset.id,
+                fecha: celdas[1].innerText.trim(),
+                nombre: celdas[2].innerText.trim(),
+                identificacion: celdas[3].innerText.trim(),
+                valor: celdas[4].innerText.trim(),
+                descripcion: celdas[5].innerText.trim(),
+            });
+        });
+
+        fetch("{% url 'registros:guardar_registros' archivo.id %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify(registros)
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.mensaje || data.error || "Guardado correctamente.");
+            if (!data.error) location.reload();
+        })
+        .catch(err => console.error("Error:", err));
+    });
+    </script>
     {% endif %}
 
+    {% endif %}
 </div>
 {% endblock %}
