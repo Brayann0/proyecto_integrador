@@ -7,8 +7,11 @@
                 <span class="navbar-text me-3">
                     👤 {{ user.username }}
                 </span>
-                <a href="{% url 'usuarios:logout' %}" class="btn btn-outline-light btn-sm">Cerrar sesión</a>
-            {% else %}
+                <form action="{% url 'usuarios:logout' %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-light btn-sm">Cerrar sesión</button>
+                </form>
+            {% elif request.resolver_match.url_name != 'login' %}
                 <a href="{% url 'usuarios:login' %}" class="btn btn-light btn-sm">Iniciar sesión</a>
             {% endif %}
         </div>

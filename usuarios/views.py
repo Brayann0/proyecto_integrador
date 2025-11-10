@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.db.models import Count
 from django.db.models.functions import ExtractMonth
+from django.db import models
 import json
 
 from .forms import LoginForm, UserRegistrationForm
@@ -32,8 +33,32 @@ def redireccion_dashboard(request):
     return redirect("usuarios:dashboard_normal")
 
 
+
+def asociar_registros_a_usuario(user):
+    """
+    Busca registros contables que coincidan con el email o la cédula del usuario
+    y los asocia automáticamente.
+    """
+    try:
+        coincidencias = RegistroContable.objects.filter(
+            models.Q(email__iexact=user.email) | models.Q(identificacion=str(user.identificacion)),
+            usuario__isnull=True
+        )
+
+        total = coincidencias.count()
+
+        if total > 0:
+            for registro in coincidencias:
+                registro.usuario = user
+                registro.save()
+            print(f"✅ {total} registros asociados automáticamente a {user.username} ({user.email})")
+
+    except Exception as e:
+        print(f"⚠️ Error asociando registros a {user.username}: {e}")
+
+
 # ====================================================
-# LOGIN PERSONALIZADO (correo o usuario)
+# LOGIN PERSONALIZADO
 # ====================================================
 from django.views import View
 
@@ -45,7 +70,7 @@ class CustomLoginView(View):
         return render(request, self.template_name, {'form': form})
 
     def post(self, request):
-        print(">>> Se recibió POST en login con datos:", request.POST)  # 🔍 Depuración
+        print(">>> Se recibió POST en login con datos:", request.POST)
 
         form = LoginForm(request, data=request.POST)
 
@@ -53,7 +78,6 @@ class CustomLoginView(View):
             username_or_email = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
 
-            # 🔍 Autenticación: puede ser username o email
             user = authenticate(request, username=username_or_email, password=password)
 
             if user is not None:
@@ -61,15 +85,14 @@ class CustomLoginView(View):
                     login(request, user)
                     messages.success(request, "Inicio de sesión exitoso.")
                     print(f">>> Login exitoso para: {user.username} ({user.rol})")
+                    
+                    asociar_registros_a_usuario(user)
 
-                    # 🔁 Redirección según rol
+                    # Redirección por rol
                     if user.is_superuser or getattr(user, "rol", "") == "admin":
-                        print(">>> Redirigiendo a dashboard de ADMIN.")
                         return redirect('usuarios:dashboard_superuser')
                     else:
-                        print(">>> Redirigiendo a dashboard de USUARIO NORMAL.")
                         return redirect('usuarios:dashboard_normal')
-
                 else:
                     messages.error(request, "Tu cuenta está inactiva. Contacta al administrador.")
             else:
@@ -84,47 +107,35 @@ class CustomLoginView(View):
 # REGISTRO DE USUARIOS
 # ====================================================
 def register(request):
-    print(">>> Entrando a la vista register...")  # 🔍 Ver si la vista se ejecuta
+    print(">>> Entrando a la vista register...")
 
     if request.method == 'POST':
-        print(">>> Se recibió POST con datos:", request.POST)  # 🔍 Ver lo que llega del formulario
+        print(">>> Se recibió POST con datos:", request.POST)
 
         user_form = UserRegistrationForm(request.POST)
 
         if user_form.is_valid():
-            print(">>> Formulario válido. Datos limpios:", user_form.cleaned_data)
-
-            # Guardar sin hacer commit para modificar antes de guardar definitivamente
             user = user_form.save(commit=False)
 
-            # Verificar si tiene la clave de administrador
             admin_key = user_form.cleaned_data.get('admin_key', '').strip()
             if admin_key == 'ADMINSUPER2025':
                 user.rol = 'admin'
                 user.is_staff = True
-                user.is_superuser = False  # si quieres que sea admin pero no superusuario
-                print(">>> Usuario creado como ADMINISTRADOR.")
+                user.is_superuser = False
             else:
                 user.rol = 'usuario'
                 user.is_staff = False
                 user.is_superuser = False
-                print(">>> Usuario creado como NORMAL.")
 
-            # Guardar el usuario definitivamente
             user.save()
-            print(">>> Usuario guardado correctamente:", user)
-
             messages.success(request, 'Tu cuenta ha sido creada exitosamente.')
             return redirect('usuarios:login')
         else:
-            print(">>> Formulario inválido. Errores:", user_form.errors)
             messages.error(request, 'Por favor corrige los errores en el formulario.')
     else:
-        print(">>> Método GET — Mostrando formulario vacío.")
         user_form = UserRegistrationForm()
 
     return render(request, 'registration/register.html', {'user_form': user_form})
-
 
 
 # ====================================================
@@ -133,10 +144,25 @@ def register(request):
 @login_required
 @user_passes_test(es_normal)
 def user_dashboard(request):
-    registros = RegistroContable.objects.filter(usuario=request.user)
-    return render(request, "usuarios/dashboard_normal.html", {
-        "tiene_registros": registros.exists()
-    })
+    """
+    Muestra los registros contables solo del usuario logueado.
+    Incluye resumen rápido.
+    """
+    registros = RegistroContable.objects.filter(usuario=request.user).order_by('-fecha')
+
+    # Estadísticas básicas
+    total_registros = registros.count()
+    total_valor = sum(r.valor for r in registros)
+    ultimo_registro = registros.first()
+
+    context = {
+        "registros": registros,
+        "total_registros": total_registros,
+        "total_valor": total_valor,
+        "ultimo_registro": ultimo_registro,
+    }
+
+    return render(request, "usuarios/dashboard_normal.html", context)
 
 
 # ====================================================
@@ -151,7 +177,6 @@ def admin_dashboard(request):
     """
     User = get_user_model()
 
-    # Si es superusuario, ve todo; si es admin, solo sus archivos
     if request.user.is_superuser:
         archivos = ArchivoCargado.objects.all()
     else:
@@ -162,7 +187,6 @@ def admin_dashboard(request):
     total_registros = RegistroContable.objects.count()
     ultimos_archivos = archivos.order_by('-fecha_subida')[:5]
 
-    # Datos para gráficas
     archivos_por_mes = (
         archivos.annotate(mes=ExtractMonth('fecha_subida'))
         .values('mes')

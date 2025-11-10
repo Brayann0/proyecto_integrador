@@ -10,6 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from .models import ArchivoCargado, RegistroContable
 from .forms import SubirArchivoForm
+from django.db.models import Q
 from .utils import procesar_archivos
 
 
@@ -67,17 +68,15 @@ def subir_archivo(request):
 
 
 
-#  Lista de archivos subidos
-
 @login_required
 @user_passes_test(es_admin)
 def lista_archivos(request):
     """
-    Muestra la lista de archivos subidos con opción de filtrar por fechas.
+    Muestra la lista de archivos subidos con opción de filtrar por fechas y nombre.
     """
     archivos = ArchivoCargado.objects.all().order_by('-fecha_subida')
 
-    # Filtro por fechas
+    # --- Filtro por fechas ---
     fecha_inicio = request.GET.get("fecha_inicio")
     fecha_fin = request.GET.get("fecha_fin")
 
@@ -89,16 +88,21 @@ def lista_archivos(request):
         except ValueError:
             messages.warning(request, "⚠️ Formato de fecha inválido. Use YYYY-MM-DD.")
 
-    # Conversión de tamaño a KB
+    # --- Filtro por nombre ---
+    nombre = request.GET.get("nombre")
+    if nombre:
+        archivos = archivos.filter(Q(nombre_original__icontains=nombre))
+
+    # --- Conversión de tamaño a KB ---
     for a in archivos:
         a.tamano_kb = round(a.tamano / 1024, 2) if a.tamano else 0
 
     return render(request, 'registros/lista_archivos.html', {
         'archivos': archivos,
-        'fecha_inicio': request.GET.get("fecha_inicio", ""),
-        'fecha_fin': request.GET.get("fecha_fin", "")
+        'fecha_inicio': fecha_inicio or "",
+        'fecha_fin': fecha_fin or "",
+        'nombre': nombre or "",
     })
-
 
 
 #  Ver contenido de un archivo
