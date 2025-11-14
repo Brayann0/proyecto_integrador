@@ -42,7 +42,7 @@ class UserRegistrationForm(forms.ModelForm):
 
     class Meta:
         model = Usuario
-        fields = ['username', 'nombre', 'apellido', 'email', 'identificacion']
+        fields = ['nombre', 'apellido', 'email', 'identificacion']
 
     # --- Validar correo ---
     def clean_email(self):
@@ -68,12 +68,18 @@ class UserRegistrationForm(forms.ModelForm):
     # --- Guardar usuario ---
     def save(self, commit=True):
         user = super().save(commit=False)
-        raw_password = self.cleaned_data.get('password')  # 🔑 Guarda la contraseña antes de sobrescribir
-        user.set_password(raw_password)  # 🔒 Encripta correctamente la contraseña
+        raw_password = self.cleaned_data.get('password')
+
+        # 🔒 Encriptar contraseña
+        user.set_password(raw_password)
+
+        # ⚙️ Rellenar el username con el mismo valor del email
+        user.username = user.email
 
         # --- Asignar rol según clave de administrador ---
         CLAVE_ADMIN = os.getenv("ADMIN_KEY", "ADMINSUPER2025")
         user.is_staff = (self.cleaned_data.get("admin_key") == CLAVE_ADMIN)
+        user.rol = 'admin' if user.is_staff else 'usuario'
 
         if commit:
             user.save()

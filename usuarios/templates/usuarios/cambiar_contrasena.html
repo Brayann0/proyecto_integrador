@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Cambiar Contraseña{% endblock %}
+
+{% block content %}
+<div class="container mt-5 d-flex justify-content-center">
+    <div class="card shadow-lg border-0" style="max-width: 500px; width: 100%;">
+        <div class="card-body p-5">
+            <div class="text-center mb-4">
+                <h3 class="text-primary fw-bold">
+                    🔒 Cambiar Contraseña
+                </h3>
+                <p class="text-muted">Actualiza tu contraseña de manera segura</p>
+            </div>
+
+            <!-- Mensajes -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info text-center">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Formulario -->
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group mb-3">
+                    {{ form.old_password.label_tag }}
+                    {{ form.old_password }}
+                </div>
+
+                <div class="form-group mb-3">
+                    {{ form.new_password1.label_tag }}
+                    {{ form.new_password1 }}
+                </div>
+
+                <div class="form-group mb-4">
+                    {{ form.new_password2.label_tag }}
+                    {{ form.new_password2 }}
+                </div>
+
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-success px-4">
+                        Guardar Cambios
+                    </button>
+
+                    {% if user.rol == "admin" or user.is_superuser %}
+                        <a href="{% url 'usuarios:dashboard_superuser' %}" class="btn btn-secondary px-4 ms-2">
+                            Cancelar
+                        </a>
+                    {% else %}
+                        <a href="{% url 'usuarios:dashboard_normal' %}" class="btn btn-secondary px-4 ms-2">
+                            Cancelar
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

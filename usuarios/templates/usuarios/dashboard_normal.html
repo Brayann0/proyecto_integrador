@@ -9,15 +9,21 @@
         👋 Bienvenido, {{ request.user.nombre }}
     </h2>
 
+    <div class="text-end mb-3">
+        <a href="{% url 'usuarios:cambiar_contrasena' %}" class="btn btn-warning">
+            🔒 Cambiar Contraseña
+        </a>
+    </div>
+
     <div class="card shadow-sm border-0">
         <div class="card-body">
             <h4 class="mb-4 text-center text-secondary">
-                📊 Tus registros contables
+                📊 Tus Registros Contables
             </h4>
 
             {% if registros %}
                 <div class="table-responsive">
-                    <table class="table table-striped align-middle text-center shadow-sm">
+                    <table class="table table-striped table-hover align-middle text-center shadow-sm">
                         <thead class="table-primary">
                             <tr>
                                 <th>#</th>

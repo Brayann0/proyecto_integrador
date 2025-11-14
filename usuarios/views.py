@@ -7,6 +7,11 @@ from django.contrib.auth import get_user_model
 from django.db.models import Count
 from django.db.models.functions import ExtractMonth
 from django.db import models
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth.hashers import check_password
+from .models import HistorialContrasena
+from django.db import connection
 import json
 
 from .forms import LoginForm, UserRegistrationForm
@@ -137,6 +142,57 @@ def register(request):
 
     return render(request, 'registration/register.html', {'user_form': user_form})
 
+
+# Cambio de contraseña con historial
+@login_required
+def cambiar_contrasena(request):
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            new_password = form.cleaned_data['new_password1']
+            user = request.user
+
+            # 🔍 Consultar contraseñas anteriores desde la tabla correcta
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT contrasena_anterior FROM usuarios_historialcontrasena
+                    WHERE usuario_id = %s
+                """, [user.id])
+                old_passwords = [row[0] for row in cursor.fetchall()]
+
+            # 🚫 Verificar si coincide con alguna anterior
+            for old_hash in old_passwords:
+                if check_password(new_password, old_hash):
+                    messages.error(request, '⚠️ No puedes reutilizar una contraseña anterior.')
+                    return render(request, 'usuarios/cambiar_contrasena.html', {'form': form})
+
+            # 💾 Guardar la contraseña anterior antes del cambio
+            HistorialContrasena.objects.create(
+                usuario=user,
+                nombre_usuario=user.nombre,
+                correo_usuario=user.email,
+                contrasena_anterior=user.password,  # guardamos el hash anterior
+            )
+
+            # ✅ Actualizar la contraseña del usuario
+            user = form.save()
+            update_session_auth_hash(request, user)
+            messages.success(request, '✅ Tu contraseña ha sido cambiada exitosamente.')
+
+            # 🔁 Redirigir según el rol
+            if user.is_superuser or user.is_staff:
+                return redirect('usuarios:dashboard_superuser')
+            else:
+                return redirect('usuarios:dashboard_normal')
+
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field.capitalize()}: {error}")
+    else:
+        form = PasswordChangeForm(request.user)
+
+    return render(request, 'usuarios/cambiar_contrasena.html', {'form': form})
 
 # ====================================================
 # DASHBOARD USUARIO NORMAL

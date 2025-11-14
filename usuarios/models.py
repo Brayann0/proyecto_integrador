@@ -13,8 +13,7 @@ class Usuario(AbstractUser):
     apellido = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
     identificacion = models.CharField(max_length=20, unique=True, null=True, blank=True)
-    rol = models.CharField(max_length=20, choices=ROLES, default='usuario')  # 👈 nuevo campo
-
+    rol = models.CharField(max_length=20, choices=ROLES, default='usuario')  
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'nombre', 'apellido']
 
@@ -32,5 +31,17 @@ class PersonaNoRegistrada(models.Model):
     def __str__(self):
         return f"{self.nombre} ({self.cedula})"
     
+    
+    
+class HistorialContrasena(models.Model):
+    usuario = models.ForeignKey('Usuario', on_delete=models.CASCADE)
+    nombre_usuario = models.CharField(max_length=255, null=True, blank=True)
+    correo_usuario = models.CharField(max_length=255, null=True, blank=True)
+    contrasena_anterior = models.CharField(max_length=255)
+    fecha_cambio = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"{self.nombre_usuario} - {self.fecha_cambio}"
 
+    class Meta:
+        db_table = 'usuarios_historialcontrasena'
